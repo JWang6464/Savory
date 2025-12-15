@@ -1,4 +1,8 @@
-import { Recipe } from "../../../packages/shared/types";
+import { Recipe, PantryItem } from "../../../packages/shared/types";
+
+/* =========================
+   Recipe Store
+========================= */
 
 const recipes = new Map<string, Recipe>();
 
@@ -16,4 +20,22 @@ export function getRecipe(id: string): Recipe | undefined {
 
 export function deleteRecipe(id: string): boolean {
   return recipes.delete(id);
+}
+
+/* =========================
+   Pantry Store
+========================= */
+
+const pantry = new Map<string, PantryItem>();
+
+export function savePantryItem(item: PantryItem): void {
+  pantry.set(item.id, item);
+}
+
+export function listPantryItems(): PantryItem[] {
+  return Array.from(pantry.values());
+}
+
+export function deletePantryItem(id: string): boolean {
+  return pantry.delete(id);
 }
