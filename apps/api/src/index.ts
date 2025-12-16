@@ -11,6 +11,7 @@ import {
   listPantryItems,
   deletePantryItem
 } from "./store";
+import { filterRecipes } from "./search";
 
 const app = express();
 app.use(cors());
@@ -113,6 +114,33 @@ app.post("/recipes", (req, res) => {
 // List recipes
 app.get("/recipes", (_req, res) => {
   res.json({ recipes: listRecipes() });
+});
+
+/* =========================
+   Recipe Search
+   (must be BEFORE /recipes/:id)
+========================= */
+
+app.get("/recipes/search", (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q : undefined;
+  const tag = typeof req.query.tag === "string" ? req.query.tag : undefined;
+
+  const maxTimeMinutes =
+    typeof req.query.maxTimeMinutes === "string"
+      ? Number(req.query.maxTimeMinutes)
+      : undefined;
+
+  if (maxTimeMinutes !== undefined && Number.isNaN(maxTimeMinutes)) {
+    return res.status(400).json({ error: "maxTimeMinutes must be a number" });
+  }
+
+  const results = filterRecipes(listRecipes(), {
+    q,
+    tag,
+    maxTimeMinutes
+  });
+
+  res.json({ recipes: results });
 });
 
 /* =========================
