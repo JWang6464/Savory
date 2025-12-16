@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+
 import { searchRecipes } from "../api";
 
 export default function Search() {
@@ -80,9 +82,11 @@ export default function Search() {
       <div style={{ marginTop: 16 }}>
         <h2>Results ({results.length})</h2>
         <ul>
-          {results.map(r => (
-            <li key={r.id}>{r.title ?? r.name}</li>
-          ))}
+        {results.map(r => (
+            <li key={r.id}>
+            <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
+            </li>
+        ))}
         </ul>
       </div>
     </div>

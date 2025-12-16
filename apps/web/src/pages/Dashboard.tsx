@@ -78,9 +78,12 @@ export default function Dashboard() {
         <h2>Recipes</h2>
         <ul>
           {recipes.map(recipe => (
-            <li key={recipe.id}>{recipe.name}</li>
+            <li key={recipe.id}>
+              <a href={`/recipes/${recipe.id}`}>{recipe.name}</a>
+            </li>
           ))}
         </ul>
+
 
         <input
           value={newRecipeName}
