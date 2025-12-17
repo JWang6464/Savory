@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
 import { searchRecipes } from "../api";
+import Card from "../components/Card";
 
 export default function Search() {
   const [q, setQ] = useState("");
@@ -32,7 +32,6 @@ export default function Search() {
         maxTimeMinutes: max,
       });
 
-      // Backend might return either an array or an object wrapper depending on your implementation.
       const list = Array.isArray(data) ? data : data.recipes ?? data.results ?? [];
       setResults(list);
     } catch (e: any) {
@@ -44,34 +43,10 @@ export default function Search() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
-      <h1>Search Recipes</h1>
-
-      <div style={{ display: "grid", gap: 8, maxWidth: 520, marginTop: 12 }}>
-        <input
-          value={q}
-          onChange={e => setQ(e.target.value)}
-          placeholder="Search query (example: chicken, noodles)"
-          style={{ padding: 8 }}
-        />
-
-        <input
-          value={tag}
-          onChange={e => setTag(e.target.value)}
-          placeholder="Tag (optional, example: spicy)"
-          style={{ padding: 8 }}
-        />
-
-        <input
-          value={maxTimeMinutes}
-          onChange={e => setMaxTimeMinutes(e.target.value)}
-          placeholder="Max time in minutes (optional, example: 20)"
-          style={{ padding: 8 }}
-        />
-
-        <button onClick={runSearch} style={{ padding: "8px 12px" }}>
-          {loading ? "Searching..." : "Search"}
-        </button>
-      </div>
+      <h1 style={{ marginBottom: 6 }}>Search</h1>
+      <p style={{ marginTop: 0, color: "#555" }}>
+        Search your recipe vault by keyword, tag, or time.
+      </p>
 
       {error && (
         <div style={{ padding: 12, border: "1px solid #999", marginTop: 16 }}>
@@ -80,14 +55,52 @@ export default function Search() {
       )}
 
       <div style={{ marginTop: 16 }}>
-        <h2>Results ({results.length})</h2>
-        <ul>
-        {results.map(r => (
-            <li key={r.id}>
-            <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
-            </li>
-        ))}
-        </ul>
+        <Card title="Filters">
+          <div style={{ display: "grid", gap: 8, maxWidth: 520 }}>
+            <input
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Query (example: chicken, noodles)"
+              style={{ padding: 8 }}
+            />
+
+            <input
+              value={tag}
+              onChange={e => setTag(e.target.value)}
+              placeholder="Tag (optional, example: spicy)"
+              style={{ padding: 8 }}
+            />
+
+            <input
+              value={maxTimeMinutes}
+              onChange={e => setMaxTimeMinutes(e.target.value)}
+              placeholder="Max time minutes (optional, example: 20)"
+              style={{ padding: 8 }}
+            />
+
+            <button onClick={runSearch} style={{ padding: "8px 12px" }}>
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <Card title={`Results (${results.length})`}>
+          {results.length === 0 ? (
+            <div style={{ color: "#555" }}>
+              Run a search to see results.
+            </div>
+          ) : (
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {results.map(r => (
+                <li key={r.id} style={{ marginBottom: 6 }}>
+                  <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
     </div>
   );

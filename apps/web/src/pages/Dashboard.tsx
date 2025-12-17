@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchPantry, fetchRecipes, fetchSuggestions, addPantryItem, createRecipe } from "../api";
+import Card from "../components/Card";
 
 export default function Dashboard() {
   const [pantry, setPantry] = useState<any[]>([]);
@@ -70,8 +71,8 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
-      <h1>Savory</h1>
-      <p>Recipe vault and pantry-aware cooking copilot.</p>
+      <h1 style={{ marginBottom: 6 }}>Savory</h1>
+      <p style={{ marginTop: 0, color: "#555" }}>Recipe vault and pantry-aware cooking copilot.</p>
 
       {error && (
         <div style={{ padding: 12, border: "1px solid #999", marginTop: 16 }}>
@@ -80,9 +81,7 @@ export default function Dashboard() {
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
-        <div style={{ border: "1px solid #ddd", padding: 16 }}>
-          <h2>Recipes ({recipes.length})</h2>
-
+        <Card title={`Recipes (${recipes.length})`}>
           <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
             <input
               value={newRecipeName}
@@ -114,18 +113,16 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <ul>
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
             {recipes.map(recipe => (
-              <li key={recipe.id}>
+              <li key={recipe.id} style={{ marginBottom: 6 }}>
                 <a href={`/recipes/${recipe.id}`}>{recipe.name}</a>
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
 
-        <div style={{ border: "1px solid #ddd", padding: 16 }}>
-          <h2>Pantry ({pantry.length})</h2>
-
+        <Card title={`Pantry (${pantry.length})`}>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             <input
               value={newPantryItem}
@@ -142,23 +139,26 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <ul>
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
             {pantry.map(item => (
-              <li key={item.id}>{item.name}</li>
+              <li key={item.id} style={{ marginBottom: 6 }}>
+                {item.name}
+              </li>
             ))}
           </ul>
-        </div>
+        </Card>
       </div>
 
-      <div style={{ border: "1px solid #ddd", padding: 16, marginTop: 16 }}>
-        <h2>Suggestions</h2>
-        <ul>
-          {suggestions.map((s: any) => (
-            <li key={s.recipe.id}>
-              {s.recipe.name} ({s.matchPercent}% match)
-            </li>
-          ))}
-        </ul>
+      <div style={{ marginTop: 16 }}>
+        <Card title="Suggestions">
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {suggestions.map((s: any) => (
+              <li key={s.recipe.id} style={{ marginBottom: 6 }}>
+                {s.recipe.name} ({s.matchPercent}% match)
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
     </div>
   );
