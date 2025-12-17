@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { searchRecipes } from "../api";
 import Card from "../components/Card";
+import { searchRecipes } from "../api";
+
+import type { Recipe } from "../../../../packages/shared/types";
 
 export default function Search() {
   const [q, setQ] = useState("");
   const [tag, setTag] = useState("");
   const [maxTimeMinutes, setMaxTimeMinutes] = useState<string>("");
 
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Recipe[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -26,13 +28,12 @@ export default function Search() {
         return;
       }
 
-      const data = await searchRecipes({
+      const list = await searchRecipes({
         q: q.trim() || undefined,
         tag: tag.trim() || undefined,
         maxTimeMinutes: max,
       });
 
-      const list = Array.isArray(data) ? data : data.recipes ?? data.results ?? [];
       setResults(list);
     } catch (e: any) {
       setError(e?.message ?? "Search failed.");
@@ -88,28 +89,20 @@ export default function Search() {
       <div style={{ marginTop: 16 }}>
         <Card title={`Results (${results.length})`}>
           {results.length === 0 ? (
-            <div style={{ color: "#555" }}>
-              Run a search to see results.
-            </div>
+            <div style={{ color: "#555" }}>Run a search to see results.</div>
           ) : (
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {results.map(r => {
-                const ingredientCount = Array.isArray(r.ingredients) ? r.ingredients.length : 0;
-                const stepCount = Array.isArray(r.steps) ? r.steps.length : 0;
-
-                return (
-                  <li key={r.id} style={{ marginBottom: 8 }}>
-                    <div>
-                      <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
-                    </div>
-                    <div style={{ color: "#555", fontSize: 12 }}>
-                      {ingredientCount} ingredients, {stepCount} steps
-                    </div>
-                  </li>
-                );
-              })}
+              {results.map(r => (
+                <li key={r.id} style={{ marginBottom: 8 }}>
+                  <div>
+                    <Link to={`/recipes/${r.id}`}>{r.title}</Link>
+                  </div>
+                  <div style={{ color: "#555", fontSize: 12 }}>
+                    {r.ingredients.length} ingredients, {r.steps.length} steps
+                  </div>
+                </li>
+              ))}
             </ul>
-
           )}
         </Card>
       </div>

@@ -1,54 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { fetchRecipeById } from "../api";
 import Card from "../components/Card";
+import { fetchRecipeById } from "../api";
+
+import type { Recipe } from "../../../../packages/shared/types";
 
 export default function CookMode() {
   const { id } = useParams<{ id: string }>();
 
-  const [recipe, setRecipe] = useState<any | null>(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const steps: string[] = useMemo(() => {
-    if (!recipe) return [];
-
-    if (Array.isArray(recipe.steps) && recipe.steps.every((s: any) => typeof s === "string")) {
-      return recipe.steps;
-    }
-
-    if (
-      Array.isArray(recipe.steps) &&
-      recipe.steps.every((s: any) => typeof s?.instruction === "string")
-    ) {
-      return recipe.steps.map((s: any) => s.instruction);
-    }
-
-    if (Array.isArray(recipe.instructions)) {
-      return recipe.instructions;
-    }
-
-    return [];
-  }, [recipe]);
-
-  const ingredients: string[] = useMemo(() => {
-    if (!recipe) return [];
-
-    if (Array.isArray(recipe.ingredients) && recipe.ingredients.every((i: any) => typeof i === "string")) {
-      return recipe.ingredients;
-    }
-
-    if (
-      Array.isArray(recipe.ingredients) &&
-      recipe.ingredients.every((i: any) => typeof i?.name === "string")
-    ) {
-      return recipe.ingredients.map((i: any) => i.name);
-    }
-
-    return [];
-  }, [recipe]);
+  const steps = useMemo(() => recipe?.steps ?? [], [recipe]);
+  const ingredients = useMemo(() => recipe?.ingredients ?? [], [recipe]);
 
   useEffect(() => {
     async function load() {
@@ -62,8 +29,7 @@ export default function CookMode() {
       setError(null);
 
       try {
-        const data = await fetchRecipeById(id);
-        const r = data?.recipe ?? data;
+        const r = await fetchRecipeById(id);
         setRecipe(r);
         setStepIndex(0);
       } catch (e: any) {
@@ -103,7 +69,7 @@ export default function CookMode() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [loading, error, steps.length]);
 
-  const title = recipe?.title ?? recipe?.name ?? "Recipe";
+  const title = recipe?.title ?? "Recipe";
 
   const currentStep =
     steps.length > 0 && stepIndex >= 0 && stepIndex < steps.length
@@ -129,7 +95,7 @@ export default function CookMode() {
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading && !error && recipe && (
         <div style={{ display: "grid", gap: 16 }}>
           <Card title="Ingredients">
             {ingredients.length === 0 ? (
@@ -137,8 +103,8 @@ export default function CookMode() {
             ) : (
               <ul style={{ margin: 0, paddingLeft: 18 }}>
                 {ingredients.map((ing, idx) => (
-                  <li key={`${ing}-${idx}`} style={{ marginBottom: 6 }}>
-                    {ing}
+                  <li key={`${ing.name}-${idx}`} style={{ marginBottom: 6 }}>
+                    {ing.name}
                   </li>
                 ))}
               </ul>
@@ -148,7 +114,7 @@ export default function CookMode() {
           <Card title={`Step ${steps.length === 0 ? 0 : stepIndex + 1} of ${steps.length}`}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
               <div style={{ fontSize: 18, lineHeight: 1.4 }}>
-                {currentStep ?? "No steps found for this recipe."}
+                {currentStep?.instruction ?? "No steps found for this recipe."}
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>

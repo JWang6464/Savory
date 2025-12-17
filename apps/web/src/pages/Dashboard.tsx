@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
-import { fetchPantry, fetchRecipes, fetchSuggestions, addPantryItem, createRecipe } from "../api";
 import Card from "../components/Card";
+import {
+  addPantryItem,
+  createRecipe,
+  fetchPantry,
+  fetchRecipes,
+  fetchSuggestions,
+} from "../api";
+
+import type { IngredientLine, PantryItem, Recipe, RecipeStep } from "../../../../packages/shared/types";
+import type { RecipeSuggestion } from "../api";
 
 export default function Dashboard() {
-  const [pantry, setPantry] = useState<any[]>([]);
-  const [recipes, setRecipes] = useState<any[]>([]);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [pantry, setPantry] = useState<PantryItem[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [suggestions, setSuggestions] = useState<RecipeSuggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const [newPantryItem, setNewPantryItem] = useState("");
 
-  const [newRecipeName, setNewRecipeName] = useState("");
+  const [newRecipeTitle, setNewRecipeTitle] = useState("");
   const [newRecipeIngredients, setNewRecipeIngredients] = useState("");
   const [newRecipeSteps, setNewRecipeSteps] = useState("");
 
@@ -42,28 +51,29 @@ export default function Dashboard() {
   async function handleAddRecipe() {
     setError(null);
 
-    const name = newRecipeName.trim();
-    if (!name) return;
+    const title = newRecipeTitle.trim();
+    if (!title) return;
 
-    const ingredients = newRecipeIngredients
+    const ingredients: IngredientLine[] = newRecipeIngredients
       .split(",")
       .map(s => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map(name => ({ name }));
 
-    const steps = newRecipeSteps
+    const steps: RecipeStep[] = newRecipeSteps
       .split("\n")
       .map(s => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map((instruction, index) => ({ index, instruction }));
 
     await createRecipe({
-      name,
+      title,
       ingredients,
       steps,
       tags: [],
-      timeMinutes: 0,
     });
 
-    setNewRecipeName("");
+    setNewRecipeTitle("");
     setNewRecipeIngredients("");
     setNewRecipeSteps("");
     loadData();
@@ -72,7 +82,9 @@ export default function Dashboard() {
   return (
     <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
       <h1 style={{ marginBottom: 6 }}>Savory</h1>
-      <p style={{ marginTop: 0, color: "#555" }}>Recipe vault and pantry-aware cooking copilot.</p>
+      <p style={{ marginTop: 0, color: "#555" }}>
+        Recipe vault and pantry-aware cooking copilot.
+      </p>
 
       {error && (
         <div style={{ padding: 12, border: "1px solid #999", marginTop: 16 }}>
@@ -84,9 +96,9 @@ export default function Dashboard() {
         <Card title={`Recipes (${recipes.length})`}>
           <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
             <input
-              value={newRecipeName}
-              onChange={e => setNewRecipeName(e.target.value)}
-              placeholder="Recipe name"
+              value={newRecipeTitle}
+              onChange={e => setNewRecipeTitle(e.target.value)}
+              placeholder="Recipe title"
               style={{ padding: 8 }}
             />
 
@@ -106,7 +118,7 @@ export default function Dashboard() {
 
             <button
               onClick={() => handleAddRecipe().catch(e => setError(e?.message ?? "Failed to create recipe"))}
-              disabled={!newRecipeName.trim()}
+              disabled={!newRecipeTitle.trim()}
               style={{ padding: "8px 12px" }}
             >
               Create recipe
@@ -114,23 +126,17 @@ export default function Dashboard() {
           </div>
 
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {recipes.map(recipe => {
-              const ingredientCount = Array.isArray(recipe.ingredients) ? recipe.ingredients.length : 0;
-              const stepCount = Array.isArray(recipe.steps) ? recipe.steps.length : 0;
-
-              return (
-                <li key={recipe.id} style={{ marginBottom: 8 }}>
-                  <div>
-                    <a href={`/recipes/${recipe.id}`}>{recipe.name}</a>
-                  </div>
-                  <div style={{ color: "#555", fontSize: 12 }}>
-                    {ingredientCount} ingredients, {stepCount} steps
-                  </div>
-                </li>
-              );
-            })}
+            {recipes.map(recipe => (
+              <li key={recipe.id} style={{ marginBottom: 8 }}>
+                <div>
+                  <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
+                </div>
+                <div style={{ color: "#555", fontSize: 12 }}>
+                  {recipe.ingredients.length} ingredients, {recipe.steps.length} steps
+                </div>
+              </li>
+            ))}
           </ul>
-
         </Card>
 
         <Card title={`Pantry (${pantry.length})`}>
@@ -153,7 +159,7 @@ export default function Dashboard() {
           <ul style={{ margin: 0, paddingLeft: 18 }}>
             {pantry.map(item => (
               <li key={item.id} style={{ marginBottom: 6 }}>
-                {item.name}
+                {item.name} ({item.haveState})
               </li>
             ))}
           </ul>
@@ -163,9 +169,9 @@ export default function Dashboard() {
       <div style={{ marginTop: 16 }}>
         <Card title="Suggestions">
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {suggestions.map((s: any) => (
+            {suggestions.map(s => (
               <li key={s.recipe.id} style={{ marginBottom: 6 }}>
-                {s.recipe.name} ({s.matchPercent}% match)
+                {s.recipe.title} ({s.matchPercent}% match)
               </li>
             ))}
           </ul>
