@@ -3,10 +3,12 @@ import Card from "../components/Card";
 import {
   addPantryItem,
   createRecipe,
+  deleteRecipe,
   fetchPantry,
   fetchRecipes,
   fetchSuggestions,
 } from "../api";
+
 
 import type { IngredientLine, PantryItem, Recipe, RecipeStep } from "../../../../packages/shared/types";
 import type { RecipeSuggestion } from "../api";
@@ -175,12 +177,29 @@ export default function Dashboard() {
 
               return (
                 <li key={recipe.id} style={{ marginBottom: 10 }}>
-                  <div>
-                    <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
-                  </div>
-                  <div style={{ color: "#555", fontSize: 12 }}>
-                    {recipe.ingredients.length} ingredients,{" "}
-                    {recipe.steps.length} steps, {timeText}, tags: {tagText}
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div>
+                        <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
+                      </div>
+                      <div style={{ color: "#555", fontSize: 12 }}>
+                        {recipe.ingredients.length} ingredients, {recipe.steps.length} steps, {timeText}, tags: {tagText}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const ok = window.confirm(`Delete "${recipe.title}"?`);
+                        if (!ok) return;
+
+                        deleteRecipe(recipe.id)
+                          .then(() => loadData())
+                          .catch(e => setError(e?.message ?? "Failed to delete recipe"));
+                      }}
+                      style={{ height: 32 }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </li>
               );

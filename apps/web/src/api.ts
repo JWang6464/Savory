@@ -53,6 +53,12 @@ export async function createRecipe(input: {
   return unwrapObject<Recipe>(data, ["recipe"]);
 }
 
+export async function deleteRecipe(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/recipes/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete recipe");
+}
+
+
 // ---------- Pantry ----------
 
 export async function fetchPantry(): Promise<PantryItem[]> {
