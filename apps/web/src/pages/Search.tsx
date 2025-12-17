@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Card from "../components/Card";
 import { searchRecipes } from "../api";
 
-import type { Recipe } from "../../../../packages/shared/types";
+import type { Recipe } from "@savory/shared";
 
 export default function Search() {
   const [q, setQ] = useState("");
@@ -17,7 +17,7 @@ export default function Search() {
   async function runSearch() {
     setError(null);
     setLoading(true);
-
+ 
     try {
       const max =
         maxTimeMinutes.trim() === "" ? undefined : Number(maxTimeMinutes);
@@ -92,16 +92,23 @@ export default function Search() {
             <div style={{ color: "#555" }}>Run a search to see results.</div>
           ) : (
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {results.map(r => (
-                <li key={r.id} style={{ marginBottom: 8 }}>
-                  <div>
-                    <Link to={`/recipes/${r.id}`}>{r.title}</Link>
-                  </div>
-                  <div style={{ color: "#555", fontSize: 12 }}>
-                    {r.ingredients.length} ingredients, {r.steps.length} steps
-                  </div>
-                </li>
-              ))}
+              {results.map(r => {
+                const tagText = r.tags.length > 0 ? r.tags.join(", ") : "none";
+                const timeText =
+                  r.totalTimeMinutes !== undefined ? `${r.totalTimeMinutes} min` : "n/a";
+
+                return (
+                  <li key={r.id} style={{ marginBottom: 10 }}>
+                    <div>
+                      <Link to={`/recipes/${r.id}`}>{r.title}</Link>
+                    </div>
+                    <div style={{ color: "#555", fontSize: 12 }}>
+                      {r.ingredients.length} ingredients, {r.steps.length} steps, {timeText}, tags: {tagText}
+                    </div>
+                  </li>
+                );
+              })}
+
             </ul>
           )}
         </Card>

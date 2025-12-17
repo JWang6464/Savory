@@ -166,17 +166,27 @@ export default function Dashboard() {
           </div>
 
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {recipes.map(recipe => (
-              <li key={recipe.id} style={{ marginBottom: 8 }}>
-                <div>
-                  <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
-                </div>
-                <div style={{ color: "#555", fontSize: 12 }}>
-                  {recipe.ingredients.length} ingredients, {recipe.steps.length} steps
-                </div>
-              </li>
-            ))}
+            {recipes.map(recipe => {
+              const tagText = recipe.tags.length > 0 ? recipe.tags.join(", ") : "none";
+              const timeText =
+                recipe.totalTimeMinutes !== undefined
+                  ? `${recipe.totalTimeMinutes} min`
+                  : "n/a";
+
+              return (
+                <li key={recipe.id} style={{ marginBottom: 10 }}>
+                  <div>
+                    <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
+                  </div>
+                  <div style={{ color: "#555", fontSize: 12 }}>
+                    {recipe.ingredients.length} ingredients,{" "}
+                    {recipe.steps.length} steps, {timeText}, tags: {tagText}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+
         </Card>
 
         <Card title={`Pantry (${pantry.length})`}>
