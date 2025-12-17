@@ -40,6 +40,7 @@ export async function createRecipe(input: {
   ingredients: IngredientLine[];
   steps: RecipeStep[];
   tags: string[];
+  totalTimeMinutes?: number;
 }): Promise<Recipe> {
   const res = await fetch(`${API_BASE}/recipes`, {
     method: "POST",

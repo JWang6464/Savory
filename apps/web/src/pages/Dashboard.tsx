@@ -22,6 +22,9 @@ export default function Dashboard() {
   const [newRecipeTitle, setNewRecipeTitle] = useState("");
   const [newRecipeIngredients, setNewRecipeIngredients] = useState("");
   const [newRecipeSteps, setNewRecipeSteps] = useState("");
+  const [newRecipeTags, setNewRecipeTags] = useState("");
+  const [newRecipeTotalTimeMinutes, setNewRecipeTotalTimeMinutes] = useState("");
+
 
   async function loadData() {
     const pantryData = await fetchPantry();
@@ -66,16 +69,38 @@ export default function Dashboard() {
       .filter(Boolean)
       .map((instruction, index) => ({ index, instruction }));
 
+    const tags = newRecipeTags
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const totalTimeMinutes =
+      newRecipeTotalTimeMinutes.trim() === ""
+        ? undefined
+        : Number(newRecipeTotalTimeMinutes);
+
+    if (totalTimeMinutes !== undefined && Number.isNaN(totalTimeMinutes)) {
+      setError("Total time minutes must be a number.");
+      return;
+    }
+
+
     await createRecipe({
       title,
       ingredients,
       steps,
-      tags: [],
+      tags,
+      totalTimeMinutes,
     });
+
+
 
     setNewRecipeTitle("");
     setNewRecipeIngredients("");
     setNewRecipeSteps("");
+    setNewRecipeTags("");
+    setNewRecipeTotalTimeMinutes("");
+
     loadData();
   }
 
@@ -108,6 +133,21 @@ export default function Dashboard() {
               placeholder="Ingredients (comma separated)"
               style={{ padding: 8 }}
             />
+
+            <input
+              value={newRecipeTags}
+              onChange={e => setNewRecipeTags(e.target.value)}
+              placeholder="Tags (comma separated, optional)"
+              style={{ padding: 8 }}
+            />
+
+            <input
+              value={newRecipeTotalTimeMinutes}
+              onChange={e => setNewRecipeTotalTimeMinutes(e.target.value)}
+              placeholder="Total time minutes (optional, example: 20)"
+              style={{ padding: 8 }}
+            />
+
 
             <textarea
               value={newRecipeSteps}
