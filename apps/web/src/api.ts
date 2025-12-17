@@ -58,6 +58,22 @@ export async function deleteRecipe(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete recipe");
 }
 
+export async function updateRecipe(
+  id: string,
+  patch: Partial<Pick<Recipe, "title" | "tags" | "totalTimeMinutes">>
+): Promise<Recipe> {
+  const res = await fetch(`${API_BASE}/recipes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+
+  if (!res.ok) throw new Error("Failed to update recipe");
+  const data = await res.json();
+  // backend returns the recipe object directly
+  return data as Recipe;
+}
+
 
 // ---------- Pantry ----------
 

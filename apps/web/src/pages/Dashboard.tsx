@@ -4,13 +4,13 @@ import {
   addPantryItem,
   createRecipe,
   deleteRecipe,
+  updateRecipe,
   fetchPantry,
   fetchRecipes,
   fetchSuggestions,
 } from "../api";
 
-
-import type { IngredientLine, PantryItem, Recipe, RecipeStep } from "../../../../packages/shared/types";
+import type { IngredientLine, PantryItem, Recipe, RecipeStep } from "@savory/shared";
 import type { RecipeSuggestion } from "../api";
 
 export default function Dashboard() {
@@ -26,6 +26,13 @@ export default function Dashboard() {
   const [newRecipeSteps, setNewRecipeSteps] = useState("");
   const [newRecipeTags, setNewRecipeTags] = useState("");
   const [newRecipeTotalTimeMinutes, setNewRecipeTotalTimeMinutes] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editTotalTimeMinutes, setEditTotalTimeMinutes] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+
 
 
   async function loadData() {
@@ -106,6 +113,62 @@ export default function Dashboard() {
     loadData();
   }
 
+  function startEdit(recipe: Recipe) {
+    setError(null);
+    setEditingId(recipe.id);
+    setEditTitle(recipe.title);
+    setEditTags(recipe.tags.join(", "));
+    setEditTotalTimeMinutes(
+      recipe.totalTimeMinutes !== undefined ? String(recipe.totalTimeMinutes) : ""
+    );
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditTitle("");
+    setEditTags("");
+    setEditTotalTimeMinutes("");
+  }
+
+  async function saveEdit() {
+    if (isSavingEdit) return;
+    if (!editingId) return;
+
+    const title = editTitle.trim();
+    if (!title) {
+      setError("Title cannot be empty.");
+      return;
+    }
+
+    const tags = editTags
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const totalTimeMinutes =
+      editTotalTimeMinutes.trim() === ""
+        ? undefined
+        : Number(editTotalTimeMinutes);
+
+    if (totalTimeMinutes !== undefined && Number.isNaN(totalTimeMinutes)) {
+      setError("Total time minutes must be a number.");
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      setError(null);
+      await updateRecipe(editingId, { title, tags, totalTimeMinutes });
+      cancelEdit();
+      await loadData();
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to save");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  }
+
+
   return (
     <div style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
       <h1 style={{ marginBottom: 6 }}>Savory</h1>
@@ -176,30 +239,79 @@ export default function Dashboard() {
                   : "n/a";
 
               return (
-                <li key={recipe.id} style={{ marginBottom: 10 }}>
+                <li key={recipe.id} style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div>
-                      <div>
-                        <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
-                      </div>
-                      <div style={{ color: "#555", fontSize: 12 }}>
-                        {recipe.ingredients.length} ingredients, {recipe.steps.length} steps, {timeText}, tags: {tagText}
-                      </div>
+                    <div style={{ flex: 1 }}>
+                      {editingId === recipe.id ? (
+                        <div style={{ display: "grid", gap: 8, maxWidth: 520 }}>
+                          <input
+                            value={editTitle}
+                            onChange={e => setEditTitle(e.target.value)}
+                            placeholder="Title"
+                            style={{ padding: 8 }}
+                          />
+
+                          <input
+                            value={editTags}
+                            onChange={e => setEditTags(e.target.value)}
+                            placeholder="Tags (comma separated)"
+                            style={{ padding: 8 }}
+                          />
+
+                          <input
+                            value={editTotalTimeMinutes}
+                            onChange={e => setEditTotalTimeMinutes(e.target.value)}
+                            placeholder="Total time minutes (optional)"
+                            style={{ padding: 8 }}
+                          />
+
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                              onClick={() => saveEdit()}
+                              style={{ padding: "6px 10px" }}
+                              disabled={isSavingEdit}
+                            >
+                              {isSavingEdit ? "Saving..." : "Save"}
+                            </button>
+                            <button onClick={cancelEdit} style={{ padding: "6px 10px" }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
+                          </div>
+                          <div style={{ color: "#555", fontSize: 12 }}>
+                            {recipe.ingredients.length} ingredients, {recipe.steps.length} steps, {timeText}, tags: {tagText}
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() => {
-                        const ok = window.confirm(`Delete "${recipe.title}"?`);
-                        if (!ok) return;
+                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                      {editingId === recipe.id ? null : (
+                        <button onClick={() => startEdit(recipe)} style={{ height: 32 }}>
+                          Edit
+                        </button>
+                      )}
 
-                        deleteRecipe(recipe.id)
-                          .then(() => loadData())
-                          .catch(e => setError(e?.message ?? "Failed to delete recipe"));
-                      }}
-                      style={{ height: 32 }}
-                    >
-                      Delete
-                    </button>
+                      <button
+                        onClick={() => {
+                          const ok = window.confirm(`Delete "${recipe.title}"?`);
+                          if (!ok) return;
+
+                          deleteRecipe(recipe.id)
+                            .then(() => loadData())
+                            .catch(e => setError(e?.message ?? "Failed to delete recipe"));
+                        }}
+                        style={{ height: 32 }}
+                        disabled={editingId === recipe.id}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
