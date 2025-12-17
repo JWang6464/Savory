@@ -12,6 +12,8 @@ import {
 
 import type { IngredientLine, PantryItem, Recipe, RecipeStep } from "@savory/shared";
 import type { RecipeSuggestion } from "../api";
+import { Link } from "react-router-dom";
+
 
 export default function Dashboard() {
   const [pantry, setPantry] = useState<PantryItem[]>([]);
@@ -281,7 +283,7 @@ export default function Dashboard() {
                       ) : (
                         <>
                           <div>
-                            <a href={`/recipes/${recipe.id}`}>{recipe.title}</a>
+                            <Link to={`/recipes/${recipe.id}`}>{recipe.title}</Link>
                           </div>
                           <div style={{ color: "#555", fontSize: 12 }}>
                             {recipe.ingredients.length} ingredients, {recipe.steps.length} steps, {timeText}, tags: {tagText}

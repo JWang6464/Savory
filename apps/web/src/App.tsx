@@ -4,6 +4,8 @@ import Search from "./pages/Search";
 import CookMode from "./pages/CookMode";
 import Nav from "./components/Nav";
 import "./App.css";
+import RecipeDetail from "./pages/RecipeDetail";
+
 
 export default function App() {
   return (
@@ -13,6 +15,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/search" element={<Search />} />
         <Route path="/recipes/:id" element={<CookMode />} />
+        <Route path="/recipes/:id" element={<RecipeDetail />} />
       </Routes>
     </BrowserRouter>
   );
