@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Card from "../components/Card";
-import { fetchRecipeById } from "../api";
+import { fetchPantry, fetchRecipeById } from "../api";
 
-import type { Recipe } from "../../../../packages/shared/types";
+import type { PantryItem, Recipe } from "@savory/shared";
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
 
 export default function CookMode() {
   const { id } = useParams<{ id: string }>();
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
 
   const [loading, setLoading] = useState(true);
@@ -16,6 +21,24 @@ export default function CookMode() {
 
   const steps = useMemo(() => recipe?.steps ?? [], [recipe]);
   const ingredients = useMemo(() => recipe?.ingredients ?? [], [recipe]);
+
+  const pantryHaveSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const item of pantry) {
+      if (item.haveState === "have") {
+        set.add(normalizeName(item.name));
+      }
+    }
+    return set;
+  }, [pantry]);
+
+  const ingredientStatus = useMemo(() => {
+    return ingredients.map(ing => {
+      const name = ing.name ?? "";
+      const have = pantryHaveSet.has(normalizeName(name));
+      return { name, have };
+    });
+  }, [ingredients, pantryHaveSet]);
 
   useEffect(() => {
     async function load() {
@@ -29,11 +52,12 @@ export default function CookMode() {
       setError(null);
 
       try {
-        const r = await fetchRecipeById(id);
+        const [r, p] = await Promise.all([fetchRecipeById(id), fetchPantry()]);
         setRecipe(r);
+        setPantry(p);
         setStepIndex(0);
       } catch (e: any) {
-        setError(e?.message ?? "Failed to load recipe.");
+        setError(e?.message ?? "Failed to load Cook Mode.");
       } finally {
         setLoading(false);
       }
@@ -76,6 +100,9 @@ export default function CookMode() {
       ? steps[stepIndex]
       : null;
 
+  const haveCount = ingredientStatus.filter(x => x.have).length;
+  const missingCount = ingredientStatus.length - haveCount;
+
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
       <div style={{ marginBottom: 16 }}>
@@ -97,13 +124,16 @@ export default function CookMode() {
 
       {!loading && !error && recipe && (
         <div style={{ display: "grid", gap: 16 }}>
-          <Card title="Ingredients">
-            {ingredients.length === 0 ? (
+          <Card title={`Ingredients (${haveCount} have, ${missingCount} missing)`}>
+            {ingredientStatus.length === 0 ? (
               <div style={{ color: "#555" }}>No ingredients listed.</div>
             ) : (
               <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {ingredients.map((ing, idx) => (
+                {ingredientStatus.map((ing, idx) => (
                   <li key={`${ing.name}-${idx}`} style={{ marginBottom: 6 }}>
+                    <span style={{ fontWeight: 600 }}>
+                      {ing.have ? "Have" : "Missing"}:
+                    </span>{" "}
                     {ing.name}
                   </li>
                 ))}
