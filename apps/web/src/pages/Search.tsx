@@ -93,12 +93,23 @@ export default function Search() {
             </div>
           ) : (
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {results.map(r => (
-                <li key={r.id} style={{ marginBottom: 6 }}>
-                  <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
-                </li>
-              ))}
+              {results.map(r => {
+                const ingredientCount = Array.isArray(r.ingredients) ? r.ingredients.length : 0;
+                const stepCount = Array.isArray(r.steps) ? r.steps.length : 0;
+
+                return (
+                  <li key={r.id} style={{ marginBottom: 8 }}>
+                    <div>
+                      <Link to={`/recipes/${r.id}`}>{r.title ?? r.name}</Link>
+                    </div>
+                    <div style={{ color: "#555", fontSize: 12 }}>
+                      {ingredientCount} ingredients, {stepCount} steps
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
+
           )}
         </Card>
       </div>

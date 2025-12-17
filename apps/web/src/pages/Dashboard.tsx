@@ -114,12 +114,23 @@ export default function Dashboard() {
           </div>
 
           <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {recipes.map(recipe => (
-              <li key={recipe.id} style={{ marginBottom: 6 }}>
-                <a href={`/recipes/${recipe.id}`}>{recipe.name}</a>
-              </li>
-            ))}
+            {recipes.map(recipe => {
+              const ingredientCount = Array.isArray(recipe.ingredients) ? recipe.ingredients.length : 0;
+              const stepCount = Array.isArray(recipe.steps) ? recipe.steps.length : 0;
+
+              return (
+                <li key={recipe.id} style={{ marginBottom: 8 }}>
+                  <div>
+                    <a href={`/recipes/${recipe.id}`}>{recipe.name}</a>
+                  </div>
+                  <div style={{ color: "#555", fontSize: 12 }}>
+                    {ingredientCount} ingredients, {stepCount} steps
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+
         </Card>
 
         <Card title={`Pantry (${pantry.length})`}>
