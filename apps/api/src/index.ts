@@ -12,10 +12,15 @@ import {
   deletePantryItem
 } from "./store";
 import { filterRecipes } from "./search";
+import { seedIfEmpty } from "./seed";
+
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+seedIfEmpty();
+
 
 /* =========================
    Health
