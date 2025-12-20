@@ -19,6 +19,17 @@ function unwrapObject<T>(data: any, keys: string[]): T {
   return data as T;
 }
 
+async function readErrorMessage(res: Response): Promise<string> {
+  try {
+    const data = await res.json();
+    if (typeof data?.error === "string" && data.error.trim()) return data.error;
+    if (typeof data?.message === "string" && data.message.trim()) return data.message;
+  } catch {
+    // ignore
+  }
+  return `Request failed (${res.status})`;
+}
+
 // ---------- Recipes ----------
 
 export async function fetchRecipes(): Promise<Recipe[]> {
@@ -48,14 +59,14 @@ export async function createRecipe(input: {
     body: JSON.stringify(input),
   });
 
-  if (!res.ok) throw new Error("Failed to create recipe");
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   const data = await res.json();
   return unwrapObject<Recipe>(data, ["recipe"]);
 }
 
 export async function deleteRecipe(id: string): Promise<void> {
   const res = await fetch(`${API_BASE}/recipes/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("Failed to delete recipe");
+  if (!res.ok) throw new Error(await readErrorMessage(res));
 }
 
 export async function updateRecipe(
@@ -68,12 +79,10 @@ export async function updateRecipe(
     body: JSON.stringify(patch),
   });
 
-  if (!res.ok) throw new Error("Failed to update recipe");
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   const data = await res.json();
-  // backend returns the recipe object directly
   return data as Recipe;
 }
-
 
 // ---------- Pantry ----------
 
@@ -97,7 +106,7 @@ export async function addPantryItem(item: {
     }),
   });
 
-  if (!res.ok) throw new Error("Failed to add pantry item");
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   const data = await res.json();
   return unwrapObject<PantryItem>(data, ["item"]);
 }
@@ -138,4 +147,28 @@ export async function searchRecipes(params: {
 
   const data = await res.json();
   return unwrapList<Recipe>(data, ["recipes", "results"]);
+}
+
+// ---------- AI Chat (Stub v1) ----------
+
+export type AIChatRequest = {
+  question: string;
+  recipeId?: string;
+  stepIndex?: number;
+};
+
+export type AIChatResponse = {
+  answer: string;
+};
+
+export async function chatAI(input: AIChatRequest): Promise<AIChatResponse> {
+  const res = await fetch(`${API_BASE}/ai/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  const data = await res.json();
+  return data as AIChatResponse;
 }

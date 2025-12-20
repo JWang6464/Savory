@@ -14,13 +14,11 @@ import {
 import { filterRecipes } from "./search";
 import { seedIfEmpty } from "./seed";
 
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 seedIfEmpty();
-
 
 /* =========================
    Health
@@ -76,7 +74,6 @@ app.delete("/pantry/:id", (req, res) => {
    Recipes
 ========================= */
 
-// Create recipe
 app.post("/recipes", (req, res) => {
   const body = req.body as Partial<Recipe>;
 
@@ -116,14 +113,12 @@ app.post("/recipes", (req, res) => {
   res.status(201).json(recipe);
 });
 
-// List recipes
 app.get("/recipes", (_req, res) => {
   res.json({ recipes: listRecipes() });
 });
 
 /* =========================
    Recipe Search
-   (must be BEFORE /recipes/:id)
 ========================= */
 
 app.get("/recipes/search", (req, res) => {
@@ -150,7 +145,6 @@ app.get("/recipes/search", (req, res) => {
 
 /* =========================
    Recipe Suggestions
-   (must be BEFORE /recipes/:id)
 ========================= */
 
 function normalizeName(s: string): string {
@@ -222,6 +216,26 @@ app.delete("/recipes/:id", (req, res) => {
   const ok = deleteRecipe(req.params.id);
   if (!ok) return res.status(404).json({ error: "not found" });
   res.status(204).send();
+});
+
+/* =========================
+   AI Chat (Stub v1)
+========================= */
+
+app.post("/ai/chat", (req, res) => {
+  const { question, recipeId, stepIndex } = req.body ?? {};
+
+  if (!question || typeof question !== "string") {
+    return res.status(400).json({ error: "question is required" });
+  }
+
+  const answer =
+    `AI (stub): I received your question: "${question}". ` +
+    (recipeId ? `Recipe ID: ${recipeId}. ` : "") +
+    (typeof stepIndex === "number" ? `Step: ${stepIndex}. ` : "") +
+    "Next, this will be powered by a real LLM with recipe + pantry context.";
+
+  res.json({ answer });
 });
 
 /* =========================
