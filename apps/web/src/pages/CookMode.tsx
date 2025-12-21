@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Card from "../components/Card";
 import { chatAI, fetchPantry, fetchRecipeById } from "../api";
-
 import type { PantryItem, Recipe } from "@savory/shared";
 
 function normalizeName(name: string): string {
@@ -45,9 +44,7 @@ export default function CookMode() {
   const pantryHaveSet = useMemo(() => {
     const set = new Set<string>();
     for (const item of pantry) {
-      if (item.haveState === "have") {
-        set.add(normalizeName(item.name));
-      }
+      if (item.haveState === "have") set.add(normalizeName(item.name));
     }
     return set;
   }, [pantry]);
@@ -59,6 +56,25 @@ export default function CookMode() {
       return { name, have };
     });
   }, [ingredients, pantryHaveSet]);
+
+  const pantryHaveNames = useMemo(
+    () =>
+      pantry
+        .filter((p) => p.haveState === "have")
+        .map((p) => p.name)
+        .filter(Boolean),
+    [pantry]
+  );
+
+  const pantryMissingNames = useMemo(
+    () => ingredientStatus.filter((x) => !x.have).map((x) => x.name).filter(Boolean),
+    [ingredientStatus]
+  );
+
+  const currentStep =
+    steps.length > 0 && stepIndex >= 0 && stepIndex < steps.length
+      ? steps[stepIndex]
+      : null;
 
   useEffect(() => {
     async function load() {
@@ -76,6 +92,18 @@ export default function CookMode() {
         setRecipe(r);
         setPantry(p);
         setStepIndex(0);
+
+        // Reset chat state when switching recipes
+        setMessages([
+          {
+            id: "welcome",
+            role: "assistant",
+            content:
+              "Ask me anything about this recipe: substitutions, timing, techniques, or what to do next.",
+          },
+        ]);
+        setChatError(null);
+        setChatInput("");
       } catch (e: any) {
         setError(e?.message ?? "Failed to load Cook Mode.");
       } finally {
@@ -115,11 +143,6 @@ export default function CookMode() {
 
   const title = recipe?.title ?? "Recipe";
 
-  const currentStep =
-    steps.length > 0 && stepIndex >= 0 && stepIndex < steps.length
-      ? steps[stepIndex]
-      : null;
-
   const haveCount = ingredientStatus.filter((x) => x.have).length;
   const missingCount = ingredientStatus.length - haveCount;
 
@@ -132,6 +155,7 @@ export default function CookMode() {
     if (isSending) return;
     const question = chatInput.trim();
     if (!question) return;
+    if (!recipe) return;
 
     setChatError(null);
     setIsSending(true);
@@ -148,14 +172,17 @@ export default function CookMode() {
     try {
       const resp = await chatAI({
         question,
-        recipeId: id,
-        stepIndex,
+        recipeTitle: recipe.title,
+        ingredients: recipe.ingredients.map((i) => i.name).filter(Boolean),
+        currentStep: currentStep?.instruction ?? "",
+        pantryHave: pantryHaveNames,
+        pantryMissing: pantryMissingNames,
       });
 
       const botMsg: ChatMessage = {
         id: `a-${Date.now()}`,
         role: "assistant",
-        content: resp.answer,
+        content: resp.message,
       };
 
       setMessages((prev) => [...prev, botMsg]);
@@ -209,9 +236,7 @@ export default function CookMode() {
         <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
           {/* Left: Cook Mode */}
           <div className="space-y-6">
-            <Card
-              title={`Ingredients (${haveCount} have, ${missingCount} missing)`}
-            >
+            <Card title={`Ingredients (${haveCount} have, ${missingCount} missing)`}>
               {ingredientStatus.length === 0 ? (
                 <div className="text-sm text-zinc-600">No ingredients listed.</div>
               ) : (
@@ -242,13 +267,9 @@ export default function CookMode() {
             </Card>
 
             <Card
-              title={`Step ${steps.length === 0 ? 0 : stepIndex + 1} of ${
-                steps.length
-              }`}
+              title={`Step ${steps.length === 0 ? 0 : stepIndex + 1} of ${steps.length}`}
               right={
-                <span className="text-xs text-zinc-600">
-                  Use ← and → arrow keys
-                </span>
+                <span className="text-xs text-zinc-600">Use ← and → arrow keys</span>
               }
             >
               <div className="space-y-4">
@@ -300,9 +321,7 @@ export default function CookMode() {
                   {messages.map((m) => (
                     <div
                       key={m.id}
-                      className={`flex ${
-                        m.role === "user" ? "justify-end" : "justify-start"
-                      }`}
+                      className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
                         className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${
@@ -318,8 +337,7 @@ export default function CookMode() {
 
                   {chatError ? (
                     <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-                      <span className="font-semibold">AI error:</span>{" "}
-                      {chatError}
+                      <span className="font-semibold">AI error:</span> {chatError}
                     </div>
                   ) : null}
 

@@ -24,6 +24,7 @@ async function readErrorMessage(res: Response): Promise<string> {
     const data = await res.json();
     if (typeof data?.error === "string" && data.error.trim()) return data.error;
     if (typeof data?.message === "string" && data.message.trim()) return data.message;
+    if (typeof data?.detail === "string" && data.detail.trim()) return data.detail;
   } catch {
     // ignore
   }
@@ -149,26 +150,63 @@ export async function searchRecipes(params: {
   return unwrapList<Recipe>(data, ["recipes", "results"]);
 }
 
-// ---------- AI Chat (Stub v1) ----------
+// ---------- AI Chat ----------
 
-export type AIChatRequest = {
+export type AiChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AiChatContext = {
+  recipeTitle?: string;
+  ingredients?: string[];
+  currentStep?: string;
+  pantryHave?: string[];
+  pantryMissing?: string[];
+};
+
+export type AiChatResult = {
+  message: string;
+  mode: "demo" | "live";
+};
+
+export async function chatAI(input: {
   question: string;
-  recipeId?: string;
-  stepIndex?: number;
-};
+  recipeTitle: string;
+  ingredients: string[];
+  currentStep: string;
+  pantryHave: string[];
+  pantryMissing: string[];
+}): Promise<AiChatResult> {
+  const body = {
+    messages: [
+      {
+        role: "user" as const,
+        content: input.question,
+      },
+    ],
+    context: {
+      recipeTitle: input.recipeTitle,
+      ingredients: input.ingredients,
+      currentStep: input.currentStep,
+      pantryHave: input.pantryHave,
+      pantryMissing: input.pantryMissing,
+    },
+  };
 
-export type AIChatResponse = {
-  answer: string;
-};
-
-export async function chatAI(input: AIChatRequest): Promise<AIChatResponse> {
   const res = await fetch(`${API_BASE}/ai/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) throw new Error(await readErrorMessage(res));
-  const data = await res.json();
-  return data as AIChatResponse;
+
+  const data = (await res.json()) as any;
+
+  // Defensive: normalize response shape
+  return {
+    message: typeof data?.message === "string" ? data.message : "",
+    mode: data?.mode === "live" ? "live" : "demo",
+  };
 }

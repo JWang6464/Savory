@@ -6,3 +6,6 @@ build/
 coverage/
 *.log
 .vscode/
+# secrets
+.env
+**/.env
