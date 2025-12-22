@@ -1,24 +1,78 @@
 # Savory
 
-Savory is a personal recipe vault and pantry-aware cooking copilot. It helps you store recipes, search by keyword/tag/time, and cook step-by-step with pantry-based “have vs missing” ingredient matching.
+Savory is a personal recipe vault and **pantry-aware cooking copilot**. It helps users store recipes, discover what they can cook with what they have, and cook step-by-step with contextual, AI-assisted guidance.
+
+The core goal of Savory is to reduce friction while cooking: fewer tabs, fewer guesses, and better decisions mid-recipe.
+
+---
 
 ## Key features
 
-* Recipe vault (create, edit, delete recipes)
-* Search recipes by keyword, tag, and max time
-* Pantry management
-* Pantry-aware recipe suggestions (match percent + missing ingredients)
-* Cook Mode: step-by-step view with keyboard navigation
-* Recipe Detail page that bridges browsing and Cook Mode
-* Shared TypeScript domain model across backend and frontend (`@savory/shared`)
-* Seeded starter recipes on API startup for fast demos
+### Recipe & Pantry Management
+- Create, edit, and delete recipes
+- Structured ingredients and step-by-step instructions
+- Pantry tracking with **have vs. missing** state
+- Seeded starter recipes for instant demos
+
+### Discovery & Planning
+- Search recipes by keyword, tag, or max cook time
+- Pantry-aware recipe suggestions with:
+  - Match percentage
+  - Missing ingredient breakdown
+
+### Cook Mode
+- Focused, step-by-step cooking view
+- Keyboard navigation (← / →)
+- Ingredient checklist with real-time have/missing status
+- Designed for hands-on use while cooking
+
+### AI Cooking Copilot
+Savory includes a **context-aware cooking assistant** that lives directly inside Cook Mode.
+
+The copilot:
+- Answers questions about the **current step**
+- Suggests substitutions based on **pantry contents**
+- Provides timing, doneness, and food-safety guidance
+- Responds in short, actionable advice suitable for live cooking
+
+The backend dynamically builds a prompt using:
+- Recipe title
+- Ingredients
+- Current step
+- Pantry have/missing state
+- User question
+
+#### Demo-first design
+To ensure the app works without paid API access:
+- Savory falls back to a **deterministic demo copilot**
+- The demo engine mimics real AI behavior using rule-based logic
+- If API quota, billing, or auth fails, the UI continues to function seamlessly
+
+This guarantees a stable experience for demos, recruiters, and local development.
+
+---
 
 ## Tech stack
 
-* Backend: Express + TypeScript (in-memory store)
-* Frontend: React + TypeScript + Vite
-* Routing: React Router
-* Shared types: TypeScript workspace package (`@savory/shared`)
+### Backend
+- Express
+- TypeScript
+- OpenAI Responses API (optional / guarded)
+- In-memory data store
+
+### Frontend
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+
+### Architecture
+- Shared domain types via workspace package (`@savory/shared`)
+- Clear separation between UI, API, and domain logic
+- Graceful degradation when external services are unavailable
+
+---
 
 ## Monorepo structure
 
@@ -28,10 +82,12 @@ Savory/
     api/        # Express + TypeScript backend
     web/        # React + Vite frontend
   packages/
-    shared/     # shared domain types
+    shared/     # Shared domain models (recipes, pantry, steps)
   docs/
     spec.md
 ```
+
+---
 
 ## Local development
 
@@ -47,15 +103,19 @@ npm run dev
 
 API runs at:
 
-* [http://localhost:3001](http://localhost:3001)
+- http://localhost:3001
 
-Useful endpoints:
+Key endpoints:
+- GET /health
+- GET /recipes
+- GET /recipes/search
+- GET /recipes/suggestions
+- GET /pantry
+- POST /ai/chat
 
-* GET /health
-* GET /recipes
-* GET /recipes/search?q=&tag=&maxTimeMinutes=
-* GET /recipes/suggestions
-* GET /pantry
+> **Note:** Data is in-memory and resets on restart. Seed data is automatically loaded.
+
+---
 
 ### 2) Start the web app (Terminal 2)
 
@@ -69,25 +129,51 @@ npm run dev
 
 Web runs at:
 
-* [http://localhost:5173](http://localhost:5173)
+- http://localhost:5173
 
-## Screenshots
+---
 
-Add screenshots here (recommended for portfolio):
+## AI setup (optional)
 
-* Dashboard (recipes + pantry + suggestions)
-* Search (filters + results)
-* Recipe Detail
-* Cook Mode (with have/missing)
+Savory works **without** an API key by default (demo mode).
 
-## Notes
+To enable live AI responses:
 
-* Data is currently in-memory, so it resets when the API restarts.
-* The API seeds a few sample recipes on startup to make demos immediate.
+1. Create an OpenAI API key
+2. Add it to `apps/api/.env`:
+
+```env
+OPENAI_API_KEY=your_key_here
+```
+
+If the key is missing or quota is exceeded, the app automatically falls back to demo mode.
+
+---
+
+## Screenshots (recommended)
+
+Suggested screenshots for portfolio:
+- Dashboard (recipes + pantry + suggestions)
+- Recipe list view
+- Recipe detail page
+- Cook Mode with AI copilot panel
+
+---
+
+## Design decisions
+
+- **Demo-first AI:** prevents broken UX and avoids forcing paid setup
+- **Cook-mode-centric UX:** optimized for real cooking, not browsing
+- **Pantry-aware logic:** AI answers are grounded in user context
+- **Shared domain types:** eliminates frontend/backend drift
+
+---
 
 ## Future improvements
 
-* Persistent storage (SQLite or JSON file)
-* “Import from URL” to parse recipes from websites
-* Better ingredient matching (pluralization, synonyms, fuzzy match)
-* Sorting and filtering UX polish (tag chips, sort by time, etc.)
+- Persistent storage (SQLite or Postgres)
+- Recipe import from external URLs
+- Ingredient normalization (pluralization, synonyms)
+- Timers per step with notifications
+- Save chat history per recipe
+- Mobile-optimized Cook Mode
