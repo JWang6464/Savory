@@ -3,7 +3,6 @@ import express from "express";
 import cors from "cors";
 import crypto from "crypto";
 import OpenAI from "openai";
-
 import { Recipe, PantryItem } from "../../../packages/shared/types";
 import {
   saveRecipe,
@@ -73,6 +72,52 @@ function demoCookCopilotAnswer(params: {
 
   // Very lightweight, deterministic “AI-like” help (portfolio-safe)
   const tips: string[] = [];
+
+    const cleaned = q.trim();
+  const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
+  const looksLikeIngredient =
+    wordCount <= 3 && !/[?.!,;:]/.test(cleaned) && cleaned.length >= 2;
+
+  // If user just typed something like "scallions" or "mirin", treat it as a substitution request.
+  if (looksLikeIngredient) {
+    tips.push("Substitution idea (demo mode):");
+
+    const item = cleaned;
+
+    if (item.includes("scallion") || item.includes("green onion")) {
+      tips.push("- Best swaps: chives, shallot, or a small amount of yellow onion.");
+      tips.push("- If it’s for garnish: you can skip it entirely.");
+    } else if (item.includes("mirin")) {
+      tips.push("- Best swap: rice vinegar + a pinch of sugar (or honey).");
+      tips.push("- Rough ratio: 1 tbsp mirin ≈ 1 tbsp rice vinegar + 1/2 tsp sugar.");
+    } else if (item.includes("oyster")) {
+      tips.push("- Soy sauce + a pinch of sugar/honey for sweetness.");
+      tips.push("- Optional: a few drops Worcestershire for depth if you have it.");
+    } else {
+      tips.push(`- What are you missing it for: sauce, aromatics, garnish, or texture?`);
+      tips.push(`- If you tell me what you have, I’ll suggest the closest swap for "${item}".`);
+    }
+
+    tips.push("- Start with half the amount, taste, then adjust.");
+
+    if (params.pantryMissing.length > 0) {
+      tips.push("Pantry check (demo mode):");
+      tips.push(
+        `- Missing: ${params.pantryMissing.slice(0, 6).join(", ")}${
+          params.pantryMissing.length > 6 ? "..." : ""
+        }`
+      );
+      tips.push(
+        `- Have: ${params.pantryHave.slice(0, 6).join(", ")}${
+          params.pantryHave.length > 6 ? "..." : ""
+        }`
+      );
+    }
+
+    tips.push("");
+    tips.push(`(Recipe: ${params.recipeTitle})`);
+    return tips.join("\n");
+  }
 
   // Substitution-oriented answers
   if (q.includes("substitute") || q.includes("replace") || q.includes("instead")) {
